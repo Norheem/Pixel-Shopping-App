@@ -7,9 +7,14 @@ import 'package:pixel_shopping_app/screen/home.dart';
 class Cart extends StatefulWidget {
   final List<CartItem> cartItems;
   final Function(List<CartItem>) updateCart;
+  final Function(List<Map<String, dynamic>>) addOrder;
 
-  const Cart({Key? key, required this.cartItems, required this.updateCart})
-      : super(key: key);
+  const Cart({
+    Key? key,
+    required this.cartItems,
+    required this.updateCart,
+    required this.addOrder,
+  }) : super(key: key);
 
   @override
   _CartState createState() => _CartState();
@@ -33,39 +38,6 @@ class _CartState extends State<Cart> {
         widget.updateCart(widget.cartItems);
       }
     });
-  }
-
-  void handleCheckout() {
-    if (widget.cartItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cart is empty')),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
-          content: const Text('Order Successful', textAlign: TextAlign.center),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  widget.cartItems.clear(); // Clear the cart items
-                  widget.updateCart(widget.cartItems);
-                });
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Home(),
-                  ),
-                );
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    }
   }
 
   @override
@@ -389,6 +361,7 @@ class _CartState extends State<Cart> {
                             widget.updateCart(updatedCartItems);
                           });
                         },
+                        addOrder: widget.addOrder,
                       ),
                     ),
                   );

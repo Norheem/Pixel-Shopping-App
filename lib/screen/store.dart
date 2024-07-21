@@ -1,14 +1,14 @@
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pixel_shopping_app/models/cart_model.dart';
+import 'package:pixel_shopping_app/screen/order_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:pixel_shopping_app/screen/cart.dart';
 import 'dart:convert';
 import 'dart:async';
-
 import 'package:pixel_shopping_app/screen/categories.dart';
 
 class Store extends StatefulWidget {
@@ -23,18 +23,33 @@ class _StoreState extends State<Store> {
   List products = [];
   List<CartItem> cartItems = [];
   List likedProducts = [];
+
   final String apiUrl =
       'https://api.timbu.cloud/products?organization_id=b755473cb3a44caaae6ecdbf728525a0&reverse_sort=false&page=1&size=25&Appid=APG6NEW601TH1S1&Apikey=82eaf351ef7d4179a7bc8883ad3532b920240705073315617101';
-
   final String imageUrl = 'https://api.timbu.cloud/images/';
 
   bool isLoading = true;
   List filteredProducts = [];
   String showRandomImageUrl = '';
+
   Timer? _timer;
 
   Color favoriteColor = Colors.white;
   Color shoppingCartColor = Colors.white;
+
+  List<Map<String, dynamic>> updatedOrdersList = [];
+
+  void handleAddOrder(List<Map<String, dynamic>> orders) async {
+    print('Handling orders: $orders');
+    setState(() {
+      updatedOrdersList.addAll(orders);
+      print('Updated orders list: $updatedOrdersList');
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final ordersJson = jsonEncode(updatedOrdersList);
+    await prefs.setString('orders', ordersJson);
+  }
 
   @override
   void initState() {
@@ -59,6 +74,7 @@ class _StoreState extends State<Store> {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           products = data['items'] ?? [];
           products.forEach((product) {
@@ -70,17 +86,20 @@ class _StoreState extends State<Store> {
         });
       } else {
         print('Failed to load products: ${response.statusCode}');
+        if (!mounted) return;
         setState(() {
           isLoading = false;
         });
       }
     } on SocketException catch (e) {
       print('Network error: $e');
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
     } catch (e) {
       print('Error fetching products: $e');
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -145,45 +164,54 @@ class _StoreState extends State<Store> {
     bool alreadyInCart = cartItems.any((item) => item.name == cartItem.name);
 
     if (alreadyInCart) {
-      _showSnackbar('${cartItem.name} is already in the cart');
+      _showSnackbar('${cartItem.name} is already in the cart',
+          color: Colors.red);
     } else {
       setState(() {
         cartItems.add(cartItem);
+
+        final productIndex =
+            products.indexWhere((product) => product['name'] == cartItem.name);
+        if (productIndex != -1) {
+          products[productIndex]['isInCart'] = true;
+        }
       });
       _showSnackbar('${cartItem.name} added to cart', color: Colors.green);
     }
     _saveCartItems();
   }
 
-  Future<void> _loadLikedProducts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final likedData = prefs.getString('likedProducts');
-    if (likedData != null) {
-      final List decodedLikedData = json.decode(likedData);
+  void toggleLikedProduct(Map product) async {
+    if (likedProducts.contains(product)) {
+      _showSnackbar('${product['name']} is already in the wishlist',
+          color: Colors.red);
+    } else {
       setState(() {
-        likedProducts = decodedLikedData;
+        likedProducts.add(product);
+        product['isFavorite'] = true;
+        _showSnackbar('${product['name']} added to wishlist',
+            color: Colors.green);
+        _saveLikedProducts();
       });
     }
   }
 
   Future<void> _saveLikedProducts() async {
     final prefs = await SharedPreferences.getInstance();
-    final String encodedLikedData = json.encode(likedProducts);
-    await prefs.setString('likedProducts', encodedLikedData);
+    final List<String> likedProductsList =
+        likedProducts.map((product) => json.encode(product)).toList();
+    await prefs.setStringList('likedProducts', likedProductsList);
   }
 
-  void toggleLikedProduct(Map product) {
-    setState(() {
-      final index = products.indexOf(product);
-      if (likedProducts.contains(product)) {
-        likedProducts.remove(product);
-        products[index]['isFavorite'] = false;
-      } else {
-        likedProducts.add(product);
-        products[index]['isFavorite'] = true;
-      }
-      _saveLikedProducts();
-    });
+  Future<void> _loadLikedProducts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String>? likedProductsList =
+        prefs.getStringList('likedProducts');
+    if (likedProductsList != null) {
+      likedProducts =
+          likedProductsList.map((product) => json.decode(product)).toList();
+      setState(() {});
+    }
   }
 
   void _showSnackbar(String message, {Color color = Colors.black}) {
@@ -215,7 +243,7 @@ class _StoreState extends State<Store> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Container(
-                      width: 250,
+                      width: 200,
                       height: 40,
                       decoration: BoxDecoration(
                         color: const Color.fromARGB(148, 228, 228, 228),
@@ -249,12 +277,32 @@ class _StoreState extends State<Store> {
                     ),
                     GestureDetector(
                       onTap: () {
+                        print(
+                            'Navigating to OrderHistory with orders: $updatedOrdersList');
+                        Future.delayed(Duration(milliseconds: 100), () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OrderHistory(
+                                orders: List.from(updatedOrdersList),
+                              ),
+                            ),
+                          );
+                        });
+                      },
+                      child: const Icon(
+                        Icons.history_sharp,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => Cart(
                               cartItems: cartItems,
                               updateCart: updateCart,
+                              addOrder: handleAddOrder,
                             ),
                           ),
                         );

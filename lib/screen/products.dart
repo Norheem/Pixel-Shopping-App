@@ -118,6 +118,10 @@ class Products extends StatelessWidget {
                       updateCart: (updatedCartItems) {
                         updateCart(updatedCartItems);
                       },
+                      addOrder: (orders) {
+                        // Add your implementation for handling orders here
+                        print("Orders: $orders");
+                      },
                     ),
                   ),
                 );

@@ -193,7 +193,7 @@ class _CategoriesState extends State<Categories> {
                                 children: [
                                   _buildIconButton(
                                     product['isFavorite']
-                                        ? Icons.favorite
+                                        ? Icons.favorite_border
                                         : Icons.favorite_border,
                                     () {
                                       toggleLikedProduct(product);
@@ -205,7 +205,7 @@ class _CategoriesState extends State<Categories> {
                                   ),
                                   _buildIconButton(
                                     product['isInCart']
-                                        ? Icons.shopping_cart
+                                        ? Icons.shopping_cart_outlined
                                         : Icons.shopping_cart_outlined,
                                     () {
                                       CartItem cartItem = CartItem(
