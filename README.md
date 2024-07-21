@@ -19,7 +19,7 @@ samples, guidance on mobile development, and a full API reference.
 
 [You can check the app here by clicking on the link provided here] (https://appetize.io/app/b_tjp2a52qmsf3rhoqna2g2bvd6u)
 
-[Provided is the link to download the APK file of the app] (https://www.mediafire.com/file/19noxiss7qy5b9l/app-debug.apk/file)
+[Provided is the link to download the APK file of the app] (https://www.mediafire.com/file/tms8ovqkp8xic3j/app-release.apk/file)
 
 
 ![2024-07-14 14-42-55 High Res Screenshot](https://github.com/user-attachments/assets/9c299db5-6453-474f-a6e2-63481abc3ec5)
