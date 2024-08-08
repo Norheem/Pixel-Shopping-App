@@ -41,6 +41,14 @@ dependencies:
   intl_phone_field: ^3.2.0
   csc_picker: ^0.2.7
   cached_network_image: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+
+
+flutter_icons:
+  android: 'launcher_icon'
+  ios: true
+  image_path: 'assets/icon.png'
  
  
 
